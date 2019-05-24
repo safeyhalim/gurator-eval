@@ -5,7 +5,7 @@ from lenskit import topn
 import pandas as pd
 from matplotlib import pyplot as plt
 from lenskit.metrics.topn import ndcg
-
+from lenskit.metrics.predict import rmse
 
 def eval(aname, algo, train, test):
     fittable = util.clone(algo)
@@ -18,8 +18,9 @@ def eval(aname, algo, train, test):
     recs['Algorithm'] = aname
     return recs
 
-ratings = pd.read_csv('u.data', sep='\t',
-                      names=['user', 'item', 'rating', 'timestamp'])
+ratings = pd.read_csv('../restaurants.data', sep='\t',
+                      names=['user', 'item', 'rating'])
+
 
 print('Sample of the data set\n{}'.format(ratings.head()))
 
@@ -46,5 +47,14 @@ print('Evaluation\n{}'.format(results.head()))
 print('Mean nDCG per algorithm\n{}'.format(results.groupby('Algorithm').ndcg.mean()))
 
 ndcg_groupedby_alg = results.groupby('Algorithm').ndcg.mean().plot.bar()
-plt.savefig('sample_plot.svg', format = 'svg')
+# plt.savefig('../sample_plot.svg', format = 'svg')
 plt.show()
+
+"""
+Calculating RMSE for a predictor
+
+algo_ii.fit(ratings)
+preds = batch.predict(algo_ii, ratings)
+user_rmse = preds.groupby('user').apply(lambda df: rmse(df.prediction, df.rating))
+print(user_rmse.head())
+"""
