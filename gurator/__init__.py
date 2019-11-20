@@ -1,3 +1,3 @@
 """
-Run different recommender algorithms on the gurator restaurant dataset
+Playground package. Only used for testing preliminary ideas with lkpy
 """

@@ -8,8 +8,7 @@ verify_ssl = true
 [packages]
 lenskit = "*"
 matplotlib = "*"
-python3-tk = "*"
-python3-5-tk = "*"
+jupyter = "*"
 
 [requires]
-python_version = "3.5"
+python_version = "3.7"

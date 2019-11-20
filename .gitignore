@@ -3,3 +3,4 @@
 Pipfile.lock
 *.svg
 *.data
+.ipynb_checkpoints*
