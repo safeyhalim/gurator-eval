@@ -4,26 +4,25 @@ from lenskit import batch, util
 from lenskit import crossfold as xf
 from lenskit.algorithms import Recommender, als, item_knn as knn
 import pandas as pd
+from predictors.trust_predictor import TrustPredictor
 
 
 OUTPUT_DIR = '../output/'
 
 def main():
-    if len(sys.argv) == 1:
-        print("Error: Missing the algorithm name")
-        exit()
-    algo_name = sys.argv[1]
+    algo_name = parse_input()
+    # Loading the dataset
+    # ratings = pd.read_csv('../dataset/movie_ratings.data', sep='\t', names=['user', 'item', 'rating', 'timestamp'])
+    ratings = pd.read_csv('../dataset/u.data', sep='\t', names=['user', 'item', 'rating'])
     if algo_name == 'ii':
         algo = knn.ItemItem(20)
     elif algo_name == 'als':
         algo = als.BiasedMF(50)
-    else:
-        print("Error: Unknown algorithm name")
-        exit()
-        
-    # Loading the dataset
-    # ratings = pd.read_csv('../dataset/movie_ratings.data', sep='\t', names=['user', 'item', 'rating', 'timestamp'])
-    ratings = pd.read_csv('../dataset/u.data', sep='\t', names=['user', 'item', 'rating'])
+    if algo_name == 'trst':
+        groups = pd.read_csv('../dataset/user_groups.data', sep='\t')
+        personalities = pd.read_csv('../dataset/personality.data', sep='\t', names=['user', 'personality'])
+        social_context = pd.read_csv('../dataset/social_contexts.data', sep='\t')
+        algo = TrustPredictor(20, groups, social_context, personalities)
     
     # Generate recommendations
     all_recs, test_data = recommend(algo, algo_name, ratings)
@@ -34,6 +33,16 @@ def main():
     export_to_csv(all_recs, test_data, preds, algo_name)
 
 
+def parse_input():
+    if len(sys.argv) == 1:
+        print("Error: Missing the algorithm name")
+        exit()
+    algo_name = sys.argv[1]
+    if algo_name == 'ii'or algo_name == 'als' or algo_name == 'trst':
+        return algo_name
+    print("Error: Unknown algorithm name")
+    exit()
+    
 def recommend(algo, algo_name, ratings):
     all_recs = []
     test_data = []
