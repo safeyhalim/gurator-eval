@@ -4,7 +4,7 @@ from lenskit import batch, util
 from lenskit import crossfold as xf
 from lenskit.algorithms import Recommender, als, item_knn as knn
 import pandas as pd
-from predictors.trust_predictor import TrustPredictor
+from predictors.social_predictor import SocialPredictor
 
 
 OUTPUT_DIR = '../output/'
@@ -22,7 +22,7 @@ def main():
         groups = pd.read_csv('../dataset/user_groups.data', sep='\t')
         personalities = pd.read_csv('../dataset/personality.data', sep='\t', names=['user', 'personality'])
         social_context = pd.read_csv('../dataset/social_contexts.data', sep='\t')
-        algo = TrustPredictor(20, groups, social_context, personalities)
+        algo = SocialPredictor(20, groups, social_context, personalities, ['tie_strength'])
     
     # Generate recommendations
     all_recs, test_data = recommend(algo, algo_name, ratings)
