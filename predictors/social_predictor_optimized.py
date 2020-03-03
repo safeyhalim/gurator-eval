@@ -15,6 +15,7 @@ SYMPATHY = 6
 DOMAIN_EXPERTISE = 7
 SOCIAL_HIERARCHY = 8
 RELATIONSHIP = 9
+RELATIONSHIP_EDITED = 10
     
 @njit(nogil=True)
 def _do_social_predictions(user, items, co_groups_members, personalities, social_attribute_index, all_predictions, social_context):
@@ -83,18 +84,20 @@ def _get_baseline_predictions_from_ratings(user, item, all_predictions):
 
 
 class SocialPredictorOptimized(ItemItem):
-    def __init__(self, nnbrs, groups, social_context, personalities, social_attributes, all_items, min_nbrs=1, min_sim=1.0e-6, save_nbrs=None,
+    def __init__(self, nnbrs, groups, social_context, personalities, social_attributes, all_items, social_attributes_indices=None, min_nbrs=1, min_sim=1.0e-6, save_nbrs=None,
                  center=True, aggregate='weighted-average'):
         super(self.__class__, self).__init__(nnbrs, min_nbrs, min_sim, save_nbrs, center, aggregate)
         self.groups = groups
         self.personalities = personalities.values if isinstance(personalities, pd.DataFrame) else personalities
         self.social_attributes = social_attributes
-        self._set_social_context(social_context)
+        self.social_attributes_indices = self._get_social_attributes_indices(social_context, social_attributes) if social_attributes_indices == None else social_attributes_indices
+        self.social_context = social_context.values if isinstance(social_context, pd.DataFrame) else social_context
         self.all_items = all_items
         
     def fit(self, ratings):
         super(self.__class__, self).fit(ratings)
         return self
+    
     
     def predict_for_user(self, user, items, ratings=None):
         co_groups_members = self._get_co_groups_members(user)
@@ -109,11 +112,10 @@ class SocialPredictorOptimized(ItemItem):
         
         # Calculate social prediction for user for each item
         global all_predictions
-        sc_index = self._get_social_attributes_indices(self.social_attributes)
         co_groups_members = np.asarray(co_groups_members)
         results, all_predictions = _do_social_predictions(user, np.asarray(items),
                                                         co_groups_members, 
-                                                        self.personalities, sc_index[0], all_predictions, 
+                                                        self.personalities, self.social_attributes_indices[0], all_predictions, 
                                                         self.social_context)
         results = pd.Series(index=results[:,0], data=results[:,1])
         return results
@@ -121,16 +123,6 @@ class SocialPredictorOptimized(ItemItem):
     def __str__(self):
         return ItemItem.__str__(self)
     
-    def _set_social_context(self, social_context):
-        if isinstance(social_context, pd.DataFrame):
-            social_context = self._remove_relationship_description_from_social_context(social_context)
-            self.social_context = social_context.values
-        else:
-            self.social_context = social_context
-    
-    def _remove_relationship_description_from_social_context(self, social_context):
-        "Temporary solution. TODO: CHANGE"
-        return social_context.drop('relationship', axis=1)
         
     def _get_co_groups_members(self, user):
         groups = self.groups
@@ -167,26 +159,11 @@ class SocialPredictorOptimized(ItemItem):
         else:
             all_predictions = np.concatenate((all_predictions, predictions_arr), axis=0)
     
-    def _get_social_attributes_indices(self, attributes):
-        global SOCIAL_CAPITAL, TIE_STRENGTH, SOCIAL_SIMILARITY, SOCIAL_CONTEXT_SIMILARITY, SYMPATHY, DOMAIN_EXPERTISE, SOCIAL_HIERARCHY, RELATIONSHIP
+    def _get_social_attributes_indices(self, social_context, attributes):
+        global SOCIAL_CAPITAL, TIE_STRENGTH, SOCIAL_SIMILARITY, SOCIAL_CONTEXT_SIMILARITY, SYMPATHY, DOMAIN_EXPERTISE, SOCIAL_HIERARCHY, RELATIONSHIP, RELATIONSHIP_EDITED
         attr_idx = np.array([], dtype=np.int_)
         for attribute in attributes:
-            if attribute == 'social_capital':
-                attr_idx = np.append(attr_idx, SOCIAL_CAPITAL)
-            elif attribute == 'tie_strength':
-                attr_idx = np.append(attr_idx, TIE_STRENGTH)
-            elif attribute == 'social_similarity':
-                attr_idx = np.append(attr_idx, SOCIAL_SIMILARITY)
-            elif attribute == 'social_context_similarity':
-                attr_idx = np.append(attr_idx, SOCIAL_CONTEXT_SIMILARITY)
-            elif attribute == 'sympathy':
-                attr_idx = np.append(attr_idx, SYMPATHY)
-            elif attribute == 'domain_expertise':
-                attr_idx = np.append(attr_idx, DOMAIN_EXPERTISE)
-            elif attribute == 'social_hierarchy':
-                attr_idx = np.append(attr_idx, SOCIAL_HIERARCHY)
-            elif attribute == 'relationship':
-                attr_idx = np.append(attr_idx, RELATIONSHIP)
+            attr_idx = np.append(attr_idx, social_context.columns.get_loc(attribute))
         return attr_idx
         
         

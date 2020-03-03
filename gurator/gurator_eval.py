@@ -5,7 +5,8 @@ from lenskit import crossfold as xf
 from lenskit.algorithms import Recommender, als, basic, item_knn as knn
 import pandas as pd
 from predictors.social_predictor_optimized import SocialPredictorOptimized
-
+from predictors.social_predictor import SocialPredictor
+from helpers import social_relationship_preprocessor
 
 OUTPUT_DIR = '../output/'
 
@@ -32,6 +33,8 @@ def main():
         algo = create_social_recommender_algorithm('social_context_similarity', ratings)
     elif algo_name == 'symp':
         algo = create_social_recommender_algorithm('sympathy', ratings)
+    elif algo_name == 'rel':
+        algo = create_social_recommender_algorithm('relationship_edited', ratings)
         
     # Generate recommendations
     all_recs, test_data = recommend(algo, algo_name, ratings)
@@ -47,7 +50,7 @@ def parse_input():
         print("Error: Missing the algorithm name")
         exit()
     algo_name = sys.argv[1]
-    if algo_name == 'ii'or algo_name == 'als' or algo_name == 'trst' or algo_name == 'socsim' or algo_name == 'domex' or algo_name == 'hierch' or algo_name == 'socap' or algo_name == 'soxsim' or algo_name == 'symp':
+    if algo_name == 'ii'or algo_name == 'als' or algo_name == 'trst' or algo_name == 'socsim' or algo_name == 'domex' or algo_name == 'hierch' or algo_name == 'socap' or algo_name == 'soxsim' or algo_name == 'symp' or algo_name == 'rel':
         return algo_name
     print("Error: Unknown algorithm name")
     exit()
@@ -56,7 +59,9 @@ def parse_input():
 def create_social_recommender_algorithm(social_attribute, ratings):
     groups = pd.read_csv('../dataset/user_groups.data', sep='\t')
     personalities = pd.read_csv('../dataset/personality.data', sep='\t', names=['user', 'personality'])
-    social_context = pd.read_csv('../dataset/social_contexts.data', sep='\t')
+    social_context = pd.read_csv('../dataset/social_contexts_edited.data', sep='\t')
+    social_context = social_relationship_preprocessor.remove_social_relationship_field(social_context)
+    social_relationship_preprocessor.set_social_relationships_weights(social_context)
     return create_recommender_algorithm_with_fallback(SocialPredictorOptimized(20, groups, social_context, personalities, [social_attribute], ratings['item'].unique()))
     
 def create_recommender_algorithm_with_fallback(algo):
