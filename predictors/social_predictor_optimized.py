@@ -86,7 +86,7 @@ def _get_baseline_predictions_from_ratings(user, item, all_predictions):
 class SocialPredictorOptimized(ItemItem):
     def __init__(self, nnbrs, groups, social_context, personalities, social_attributes, all_items, social_attributes_indices=None, min_nbrs=1, min_sim=1.0e-6, save_nbrs=None,
                  center=True, aggregate='weighted-average'):
-        super(self.__class__, self).__init__(nnbrs, min_nbrs, min_sim, save_nbrs, center, aggregate)
+        super(SocialPredictorOptimized, self).__init__(nnbrs, min_nbrs, min_sim, save_nbrs, center, aggregate)
         self.groups = groups
         self.personalities = personalities.values if isinstance(personalities, pd.DataFrame) else personalities
         self.social_attributes = social_attributes
@@ -94,11 +94,13 @@ class SocialPredictorOptimized(ItemItem):
         self.social_context = social_context.values if isinstance(social_context, pd.DataFrame) else social_context
         self.all_items = all_items
         
+    # Overriden method    
     def fit(self, ratings):
-        super(self.__class__, self).fit(ratings)
+        super(SocialPredictorOptimized, self).fit(ratings)
         return self
     
     
+    # Overriden method
     def predict_for_user(self, user, items, ratings=None):
         co_groups_members = self._get_co_groups_members(user)
         if len(co_groups_members) == 0: # No groups for this user, prediction is the same as Item-Item Knn
