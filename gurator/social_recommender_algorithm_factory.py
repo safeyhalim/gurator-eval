@@ -53,7 +53,7 @@ class SocialRecommenderAlgorithmFactory(object):
         return social_attribute_dict[algo_name]
     
     @staticmethod
-    def _create_non_social_recommender_algorithm(algo_name, data_set:DataSet, aggregation):
+    def _create_non_social_recommender_algorithm(algo_name, aggregation):
         if algo_name == 'ii':
             algo = knn.ItemItem(NEIGHBORS)
         elif algo_name == 'als':
