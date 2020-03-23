@@ -7,26 +7,28 @@ from helpers.dataset_parser import DataSetParser
 from gurator.social_recommender_algorithm_factory import SocialRecommenderAlgorithmFactory
 from entities.data_set import DataSet
 from helpers.output_generator import OutputGenerator
+from predictors.aggregators.aggregation import Aggregation
 
 OUTPUT_DIR = '../output/'
 
 def main():
     algo_name = InputParser.parse_input(sys.argv)
     data_set = DataSetParser.parse_dataset()
-    is_group_recommender = True
-    algo = SocialRecommenderAlgorithmFactory.create_social_recommender_algorithm(algo_name, data_set, is_group_recommender)
-    ratings = get_ratings(data_set, is_group_recommender)
+    aggregation = Aggregation.AVG
+    
+    algo = SocialRecommenderAlgorithmFactory.create_recommender_algorithm(algo_name, data_set, aggregation)
+    ratings = get_ratings(data_set, aggregation)
     
     # Generate recommendations
     all_recs, test_data = recommend(algo, algo_name, ratings)
     # Generate predictions
     preds = predict(algo, ratings) 
     # Export output
-    OutputGenerator.generate_output(all_recs, test_data, preds, algo_name)
+    OutputGenerator.generate_output(all_recs, test_data, preds, algo_name, aggregation)
 
 
-def get_ratings(data_set:DataSet, is_group_recommender):
-    if is_group_recommender:
+def get_ratings(data_set:DataSet, aggregation):
+    if aggregation != Aggregation.NONE:
         return data_set.group_ratings
     return data_set.individual_ratings    
     
