@@ -7,6 +7,7 @@ from lenskit.algorithms.basic import Fallback
 import pandas as pd
 import logging
 from predictors.social_predictor_optimized import SocialPredictorOptimized
+from predictors.social_predictor import SocialPredictor
 
 _logger = logging.getLogger(__name__)
 class GroupPredictorFallback(Fallback):
@@ -27,7 +28,7 @@ class GroupPredictorFallback(Fallback):
             # If the algorithm is an instance of SocialPredictorOptimized class, 
             # then it needs the co_group_members for the user to whom it's predicting, 
             # otherwise, the predict_for_user method is called as usual
-            if type(algo) == SocialPredictorOptimized: 
+            if type(algo) == SocialPredictorOptimized or type(algo) == SocialPredictor: 
                 aps = algo.predict_for_user_in_group(user, items, co_group_members, ratings) 
             else:
                 aps = algo.predict_for_user(user, remaining, ratings=ratings)

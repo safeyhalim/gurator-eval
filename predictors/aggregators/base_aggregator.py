@@ -8,6 +8,10 @@ from abc import abstractmethod
 class BaseAggregator(object):
     
     @abstractmethod
+    def __init__(self, params=None):
+        self.params = params        
+        
+    @abstractmethod
     def calculate_group_predictions(self, individual_predictions):
         """
         Calculates the aggregated predictions for the group based on the individual 

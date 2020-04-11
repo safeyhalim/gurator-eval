@@ -4,4 +4,5 @@ Pipfile.lock
 *.svg
 *.data
 .ipynb_checkpoints*
+.vscode*
 __pycache__

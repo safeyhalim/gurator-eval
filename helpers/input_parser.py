@@ -4,7 +4,9 @@ Created on 8 Mar 2020
 @author: Safey A.Halim
 '''
 
-algo_names = ['ii', 
+algo_names = ['all',
+              'full-soc', 
+              'ii', 
               'als',
                'trst',
                 'socsim',

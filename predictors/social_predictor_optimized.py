@@ -17,19 +17,19 @@ SOCIAL_HIERARCHY = 8
 RELATIONSHIP = 9
 RELATIONSHIP_EDITED = 10
 
-    
-@njit(nogil=True)
-def _do_social_predictions(user, items, co_groups_members, personalities, social_attribute_index, all_predictions, social_context):
+
+@njit(nogil=True)    
+def _do_social_predictions(user, items, co_groups_members, personalities, social_attribute_indices, all_predictions, social_context):
     initial_values = np.full((items.size, 1), np.nan, dtype=np.float_)
     results = np.column_stack((items, initial_values))
     for i in prange(items.shape[0]):
         item = items[i]
-        social_prediction_value = _calculate_social_prediction_for_item(user, item, co_groups_members, personalities, social_attribute_index, all_predictions, social_context)
+        # social_prediction_value = _calculate_social_prediction_for_item(user, item, co_groups_members, personalities, social_attribute_indices, all_predictions, social_context)
+        social_prediction_value = _calculate_social_prediction_for_item_with_whole_social_context(user, item, co_groups_members, personalities, social_attribute_indices, all_predictions, social_context)
         results[results[:, 0] == item, 1] = social_prediction_value
     return results, all_predictions
 
-
-@njit(nogil=True)
+@njit(nogil=True) 
 def _calculate_social_prediction_for_item(u, item, co_groups_members, personalities, social_attribute, all_predictions, social_context):
     sum_social_attr = 0
     sum_pred = 0
@@ -46,8 +46,28 @@ def _calculate_social_prediction_for_item(u, item, co_groups_members, personalit
         sum_pred += ((predvi + pv) * social_attr_val)
     return (1 / sum_social_attr) * sum_pred
 
+@njit(nogil=True) 
+def _calculate_social_prediction_for_item_with_whole_social_context(u, item, co_groups_members, personalities, social_attribute_indices, all_predictions, social_context):
+    sum_social_context = 0
+    sum_pred = 0
+    social_context_towards_self = social_attribute_indices.shape[0]
+    group_members_baseline_predictions = _get_all_nonnan_baseline_predictions_for_item(co_groups_members, item, all_predictions)
+    if np.all(group_members_baseline_predictions == 0):
+        return _get_baseline_predictions_from_ratings(u, item, all_predictions)
+           
+    for v in group_members_baseline_predictions[:, 0]:
+        social_attr_vals = np.empty(social_attribute_indices.shape[0], np.float_)
+        for social_attribute_index in social_attribute_indices:
+            social_attr_vals = np.append(social_attr_vals, _get_social_attribute_value(u, v, social_attribute_index, social_context))
+        social_context_val = np.sum(social_attr_vals)
+        row = group_members_baseline_predictions[np.where(group_members_baseline_predictions[:, 0] == v)]
+        predvi = row[0, 1]
+        pv = _get_personality_value(v, personalities)
+        sum_social_context += social_context_val
+        sum_pred += ((predvi + pv) * social_context_val)
+    return (1 / (social_context_towards_self + sum_social_context)) * sum_pred
 
-@njit(nogil=True)
+@njit(nogil=True) 
 def _get_all_nonnan_baseline_predictions_for_item(users, item, all_predictions):
     preds_arr = np.zeros((1, 2))
     for i in range(len(users)):
@@ -60,7 +80,6 @@ def _get_all_nonnan_baseline_predictions_for_item(users, item, all_predictions):
                 preds_arr = np.concatenate((preds_arr, np.asarray([[user, pred_value]])), axis=0)
     return preds_arr
 
-            
 @njit(nogil=True)
 def _get_personality_value(v, personalities):
     p = personalities
@@ -68,7 +87,6 @@ def _get_personality_value(v, personalities):
     if personality_row.size == 0:
         return 0.5
     return personality_row[0, 1]
-
 
 @njit(nogil=True)    
 def _get_social_attribute_value(u, v, sc_index, social_context):
@@ -80,7 +98,6 @@ def _get_social_attribute_value(u, v, sc_index, social_context):
     if social_attr_value == 0:
         return 0.01  # to avoid division by zero
     return social_attr_value
-
 
 @njit(nogil=True)
 def _get_baseline_predictions_from_ratings(user, item, all_predictions):
@@ -97,7 +114,7 @@ class SocialPredictorOptimized(ItemItem):
         self.groups = groups
         self.personalities = personalities.values if isinstance(personalities, pd.DataFrame) else personalities
         self.social_attributes = social_attributes
-        self.social_attributes_indices = self._get_social_attributes_indices(social_context, social_attributes) if social_attributes_indices == None else social_attributes_indices
+        self.social_attributes_indices = self._get_social_attributes_indices(social_context, social_attributes) if social_attributes_indices is None else social_attributes_indices
         self.social_context = social_context.values if isinstance(social_context, pd.DataFrame) else social_context
         self.all_items = all_items
         
@@ -110,26 +127,6 @@ class SocialPredictorOptimized(ItemItem):
     def predict_for_user(self, user, items, ratings=None):
         co_groups_members = self._get_co_groups_members(user)
         return self.predict_for_user_in_group(user, items, ratings, co_groups_members)
-        """
-        if len(co_groups_members) == 0: # No groups for this user, prediction is the same as Item-Item Knn
-            return super(self.__class__, self).predict_for_user(user, items, ratings)
-        
-        # Calculate the baseline predictions (Item-Item Knn) for the user and add them to the all_predictions df
-        self._add_baseline_predictions_to_ratings(user, self.all_items, ratings)
-              
-        # Calculate the baseline predictions (Item-Item Knn) for the user's co-groups members
-        self._predict_co_groups_members_ratings(self.all_items, ratings, co_groups_members)
-        
-        # Calculate social prediction for user for each item
-        global all_predictions
-        co_groups_members = np.asarray(co_groups_members)
-        results, all_predictions = _do_social_predictions(user, np.asarray(items),
-                                                        co_groups_members, 
-                                                        self.personalities, self.social_attributes_indices[0], all_predictions, 
-                                                        self.social_context)
-        results = pd.Series(index=results[:,0], data=results[:,1])
-        return results
-        """
     
     def predict_for_user_in_group(self, user, items, co_group_members, ratings=None):
         if len(co_group_members) == 0:  # No groups for this user, prediction is the same as Item-Item Knn
@@ -144,9 +141,10 @@ class SocialPredictorOptimized(ItemItem):
         # Calculate social prediction for user for each item
         global all_predictions
         co_group_members = np.asarray(co_group_members)
+        social_attribute_indices = np.asarray(self.social_attributes_indices)
         results, all_predictions = _do_social_predictions(user, np.asarray(items),
                                                         co_group_members,
-                                                        self.personalities, self.social_attributes_indices[0], all_predictions,
+                                                        self.personalities, social_attribute_indices, all_predictions,
                                                         self.social_context)
         results = pd.Series(index=results[:, 0], data=results[:, 1])
         return results

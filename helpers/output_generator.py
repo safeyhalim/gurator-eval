@@ -13,8 +13,8 @@ OUTPUT_DIR = '../output/'
 class OutputGenerator(object):
 
     @staticmethod
-    def generate_output(recs, test_data, preds, algo_name, aggregation):
-        dir_path = OutputGenerator._generate_dir_path(algo_name, aggregation)
+    def generate_output(recs, test_data, preds, aggregation, n, special_name=None):
+        dir_path = OutputGenerator._generate_dir_path(aggregation, n, special_name)
         OutputGenerator._create_output_dir_if_not_exists(dir_path)
         OutputGenerator._do_export_to_csv(recs, dir_path + 'recs.csv')
         OutputGenerator._do_export_to_csv(test_data, dir_path + 'testdata.csv')
@@ -34,9 +34,12 @@ class OutputGenerator(object):
             
     
     @staticmethod
-    def _generate_dir_path(algo_name, aggregation):
+    def _generate_dir_path(aggregation, n, special_name):
+        n_str = str(n)
+        if special_name is not None:
+            n_str += special_name
         if aggregation == Aggregation.NONE:
-            return OUTPUT_DIR + algo_name + '/'
-        return OUTPUT_DIR + aggregation + '/' + algo_name + '/'
+            return OUTPUT_DIR + 'single-' + n_str + '/'
+        return OUTPUT_DIR + aggregation.name + '-' + n_str + '/'
             
         

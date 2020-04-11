@@ -5,12 +5,20 @@ Created on 19 Mar 2020
 '''
 from predictors.aggregators.average_aggregator import AverageAggregator
 from predictors.aggregators.aggregation import Aggregation
+from predictors.aggregators.least_misery_aggregator import LeastMiseryAggregator
+from predictors.aggregators.most_pleasure_aggregator import MostPleasureAggregator
+
 
 class AggregatorFactory(object):
-    
-    @staticmethod
-    def create_aggregator(aggregation:Aggregation):
-        if aggregation == Aggregation.AVG:
+
+    def __init__(self, aggregation: Aggregation):
+        self.aggregation = aggregation
+        
+    def create_aggregator(self):
+        if self.aggregation == Aggregation.AVG:
             return AverageAggregator()
-        else:
-            raise Exception('Unknown aggregation method')
+        if self.aggregation == Aggregation.LEAST_MISERY:
+            return LeastMiseryAggregator()
+        if self.aggregation == Aggregation.MOST_PLEASURE:
+            return MostPleasureAggregator()
+        raise Exception('Unknown aggregation method')
