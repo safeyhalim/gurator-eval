@@ -10,8 +10,8 @@ from helpers.output_generator import OutputGenerator
 from predictors.aggregators.aggregation import Aggregation
 
 
-AGGREGATION = Aggregation.AVG  
-N = 3 #number of items to recommend for user
+AGGREGATION = Aggregation.MOST_PLEASURE  
+N = 5 #number of items to recommend for user
 
 def main():
     algo_name = InputParser.parse_input(sys.argv)
