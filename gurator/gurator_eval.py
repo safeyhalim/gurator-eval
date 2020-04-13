@@ -10,8 +10,8 @@ from helpers.output_generator import OutputGenerator
 from predictors.aggregators.aggregation import Aggregation
 
 
-AGGREGATION = Aggregation.MOST_PLEASURE  
-N = 5 #number of items to recommend for user
+AGGREGATION = Aggregation.AVG  
+N = 3 #number of items to recommend for user
 
 def main():
     algo_name = InputParser.parse_input(sys.argv)
@@ -23,20 +23,28 @@ def main():
     # Generate predictions
     preds = predict(algo_wrappers, ratings) 
     # Export output
-    OutputGenerator.generate_output(all_recs, test_data, preds, AGGREGATION, N, algo_name if algo_name == 'full-soc' else None)
+    OutputGenerator.generate_output(all_recs, test_data, preds, AGGREGATION, N, get_algo_name_for_output(algo_name))
     
 
 def create_recommender_algorithms(algo_name, data_set:DataSet):
     if AGGREGATION == Aggregation.DICTATORSHIP:
-        return SocialRecommenderAlgorithmFactory().create_dictatorship_recommender_algorithms(data_set)
+        return SocialRecommenderAlgorithmFactory.create_dictatorship_recommender_algorithms(data_set)
     if algo_name == 'full-soc':
-        return SocialRecommenderAlgorithmFactory().create_full_social_context_and_ii_algorithms(data_set, AGGREGATION)
+        return SocialRecommenderAlgorithmFactory.create_full_social_context_and_ii_algorithms(data_set, AGGREGATION)
+    if algo_name == 'full-soc-trst':
+        return SocialRecommenderAlgorithmFactory.create_full_social_context_and_ii_and_trust_algorithms(data_set, AGGREGATION)
     return SocialRecommenderAlgorithmFactory.create_recommender_algorithms([algo_name], data_set, AGGREGATION)
         
 def get_ratings(data_set:DataSet):
     if AGGREGATION != Aggregation.NONE:
         return data_set.group_ratings
-    return data_set.individual_ratings    
+    return data_set.individual_ratings
+
+
+def get_algo_name_for_output(algo_name):
+    if algo_name == 'full-soc' or algo_name == 'full-soc-trst':
+        return algo_name
+    return None    
     
     
 def recommend(algo_wrappers, ratings):

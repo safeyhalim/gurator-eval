@@ -5,7 +5,8 @@ Created on 8 Mar 2020
 '''
 
 algo_names = ['all',
-              'full-soc', 
+              'full-soc',
+              'full-soc-trst', 
               'ii', 
               'als',
                'trst',

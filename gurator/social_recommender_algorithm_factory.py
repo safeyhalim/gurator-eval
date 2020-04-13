@@ -67,7 +67,7 @@ class SocialRecommenderAlgorithmFactory(object):
     def create_full_social_context_and_ii_algorithms(data_set:DataSet, aggregation:Aggregation) -> [AlgorithmWrapper]:
         '''
             Creates a list of AlgoWrapper objects that contains two group recommender algorithms with the passed aggregation strategy.
-            The first is a traditional item-item collaborative filtering. The second is a full social context recommender algorithm
+            The first is a baseline item-item collaborative filtering. The second is a full social context recommender algorithm
             which will generate predictions based on ALL the social context attributes defined in the social_attribute_dict
         '''
         aggregator = AggregatorFactory(aggregation).create_aggregator()
@@ -77,8 +77,23 @@ class SocialRecommenderAlgorithmFactory(object):
         social_context_algo = GroupPredictor(NEIGHBORS, data_set.groups, data_set.individual_ratings, 
                                  SocialRecommenderAlgorithmFactory._create_social_recommender_algorithm(social_context_attributes, data_set, aggregation), aggregator)
         return [AlgorithmWrapper('ii', ii_algo), AlgorithmWrapper('socntxt', social_context_algo)]
+    
+    @staticmethod
+    def create_full_social_context_and_ii_and_trust_algorithms(data_set:DataSet, aggregation:Aggregation) -> [AlgorithmWrapper]:
+        '''
+            Creates a list of AlgoWrapper objects that contains three group recommender algorithms with the passed aggregation strategy.
+            The first is a baseline item-item collaborative filtering, the second is a social recommender algorithm with tie strength 
+            (proxy for trust) as the social context attribute based on which the recommender generates predictions, and the third is 
+            a full social context recommender algorithm which will generate predictions based on ALL the social context attributes 
+            defined in the social_attribute_dict (also including tie strength as a proxy for trust)
+        '''
+        aggregator = AggregatorFactory(aggregation).create_aggregator()
+        tie_strength_algo = GroupPredictor(NEIGHBORS, data_set.groups, data_set.individual_ratings, 
+                                 SocialRecommenderAlgorithmFactory._create_social_recommender_algorithm([social_attribute_dict['trst']], data_set, aggregation), aggregator)
+        algorithm_wrappers = SocialRecommenderAlgorithmFactory.create_full_social_context_and_ii_algorithms(data_set, aggregation)
+        algorithm_wrappers.append(AlgorithmWrapper('trst', tie_strength_algo))
+        return algorithm_wrappers
         
-
         
     @staticmethod
     def _do_create_recommender_algorithms(algo_names, data_set:DataSet, aggregation):
