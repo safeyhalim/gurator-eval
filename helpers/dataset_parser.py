@@ -18,4 +18,6 @@ class DataSetParser(object):
         # Note: The first column is the group ratings DataFrame is 'user' although it refers to the group IDs. 
         # This is the case because the ratings DataFrame in Lenskit is expected to have the format [user, item, rating]
         group_ratings = pd.read_csv('../dataset/g.data', sep='\t', names=['user', 'item', 'rating'])
-        return DataSet(individual_ratings, group_ratings, personalities, social_context, groups)
+        internal_group_ratings = pd.read_csv('../dataset/g_in.data', sep='\t', names=['user', 'item', 'rating'])
+        external_group_ratings = pd.read_csv('../dataset/g_ex.data', sep='\t', names=['user', 'item', 'rating'])
+        return DataSet(individual_ratings, group_ratings, internal_group_ratings, external_group_ratings, personalities, social_context, groups)

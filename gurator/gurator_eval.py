@@ -8,9 +8,11 @@ from gurator.social_recommender_algorithm_factory import SocialRecommenderAlgori
 from entities.data_set import DataSet
 from helpers.output_generator import OutputGenerator
 from predictors.aggregators.aggregation import Aggregation
+from gurator.ratings_type import RatingsType
 
+AGGREGATION = Aggregation.LEAST_MISERY  
+RATINGS_TYPE = RatingsType.EXTERNAL_GROUPS
 
-AGGREGATION = Aggregation.AVG  
 N = 3 #number of items to recommend for user
 
 def main():
@@ -23,7 +25,7 @@ def main():
     # Generate predictions
     preds = predict(algo_wrappers, ratings) 
     # Export output
-    OutputGenerator.generate_output(all_recs, test_data, preds, AGGREGATION, N, get_algo_name_for_output(algo_name))
+    OutputGenerator.generate_output(all_recs, test_data, preds, AGGREGATION, N, RATINGS_TYPE, get_algo_name_for_output(algo_name))
     
 
 def create_recommender_algorithms(algo_name, data_set:DataSet):
@@ -36,15 +38,19 @@ def create_recommender_algorithms(algo_name, data_set:DataSet):
     return SocialRecommenderAlgorithmFactory.create_recommender_algorithms([algo_name], data_set, AGGREGATION)
         
 def get_ratings(data_set:DataSet):
-    if AGGREGATION != Aggregation.NONE:
+    if RATINGS_TYPE == RatingsType.GROUPS:
         return data_set.group_ratings
+    elif RATINGS_TYPE == RatingsType.INTERNAL_GROUPS:
+        return data_set.internal_group_ratings
+    elif RATINGS_TYPE == RatingsType.EXTERNAL_GROUPS:
+        return data_set.external_group_ratings
     return data_set.individual_ratings
 
 
 def get_algo_name_for_output(algo_name):
     if algo_name == 'full-soc' or algo_name == 'full-soc-trst':
         return algo_name
-    return None    
+    return None
     
     
 def recommend(algo_wrappers, ratings):
