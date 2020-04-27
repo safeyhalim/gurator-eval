@@ -10,7 +10,7 @@ from helpers.output_generator import OutputGenerator
 from predictors.aggregators.aggregation import Aggregation
 from gurator.ratings_type import RatingsType
 
-AGGREGATION = Aggregation.LEAST_MISERY  
+AGGREGATION = Aggregation.AVG  
 RATINGS_TYPE = RatingsType.EXTERNAL_GROUPS
 
 N = 3 #number of items to recommend for user
